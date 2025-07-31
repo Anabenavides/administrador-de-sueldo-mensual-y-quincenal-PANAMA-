@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Administrador de Sueldo</title>
+<style>
+  body { font-family: system-ui,-apple-system,BlinkMacSystemFont,sans-serif; max-width: 520px; margin: auto; padding: 1rem; background: #f0f2f7; }
+  .card { background: #ffffff; padding: 1rem 1.25rem; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 6px 18px -6px rgba(0,0,0,0.08); }
+  label { display: block; margin-top: .5rem; font-size: .9rem; }
+  input { width: 100%; padding: .55rem .75rem; border-radius: 8px; border: 1px solid #ccc; margin-top: .25rem; font-size: 1rem; }
+  h1 { margin-bottom: .5rem; }
+  .summary { font-weight: 600; margin-top: .4rem; font-size: .95rem; }
+  .positive { color: green; }
+  .negative { color: red; }
+  .small { font-size: .75rem; color: #555; }
+  .row { display: flex; justify-content: space-between; margin-top: 4px; }
+  .divider { height: 1px; background: #e2e2e8; margin: 12px 0; }
+</style>
+</head>
+<body>
+  <h1>Administrador de Sueldo</h1>
+
+  <div class="card">
+    <h2>Ingresos</h2>
+    <label>Sueldo mensual
+      <input type="number" id="sueldo" value="0" step="0.01" />
+    </label>
+  </div>
+
+  <div class="card">
+    <h2>Gastos (mensuales)</h2>
+    <label>Casa / Alquiler <input type="number" id="casa" value="0" step="0.01" /></label>
+    <label>Luz <input type="number" id="luz" value="0" step="0.01" /></label>
+    <label>Internet <input type="number" id="internet" value="0" step="0.01" /></label>
+    <label>Comida <input type="number" id="comida" value="0" step="0.01" /></label>
+    <label>Teléfono <input type="number" id="telefono" value="0" step="0.01" /></label>
+    <label>Transporte <input type="number" id="transporte" value="0" step="0.01" /></label>
+    <label>Ahorros <input type="number" id="ahorros" value="0" step="0.01" /></label>
+  </div>
+
+  <div class="card">
+    <h2>Resumen</h2>
+    <div id="resumen"></div>
+    <div class="small">
+      Deducciones obreras aplicadas sobre la <strong>quincena</strong>: Seguro Social 9.75%, Seguro Educativo 1.25%.
+    </div>
+  </div>
+
+  <script>
+    const fields = ["sueldo","casa","luz","internet","comida","telefono","transporte","ahorros"];
+    function formatMoney(n) {
+      return "$" + n.toFixed(2);
+    }
+    function calc() {
+      const get = id => parseFloat(document.getElementById(id).value) || 0;
+      const sueldoMensual = get("sueldo");
+      const sueldoQuincenal = sueldoMensual / 2;
+
+      // Gastos mensuales totales
+      const gastosMensuales = ["casa","luz","internet","comida","telefono","transporte","ahorros"]
+        .map(get)
+        .reduce((a,b)=>a+b,0);
+
+      // Deducciones obreras sobre quincena
+      const seguroSocial = sueldoQuincenal * 0.0975; // 9.75%
+      const seguroEducativo = sueldoQuincenal * 0.0125; // 1.25%
+      const deduccionesObreras = seguroSocial + seguroEducativo;
+      const netoQuincenalAntesISR = sueldoQuincenal - deduccionesObreras;
+
+      // Saldo mensual disponible después de gastos (sin contar ISR)
+      const saldoDisponibleMensual = sueldoMensual - gastosMensuales;
+      // Por quincena, se puede aproximar dividiendo la parte proporcional
+      const gastosQuincenales = gastosMensuales / 2;
+      const saldoQuincenalDisponible = netoQuincenalAntesISR - gastosQuincenales;
+
+      const resumen = document.getElementById("resumen");
+      resumen.innerHTML = `
+        <div class="row"><div>Sueldo mensual:</div><div>${formatMoney(sueldoMensual)}</div></div>
+        <div class="row"><div>Sueldo quincenal:</div><div>${formatMoney(sueldoQuincenal)}</div></div>
+        <div class="divider"></div>
+
+        <div class="row"><div>Seguro Social (9.75%) quincenal:</div><div class="negative">-${formatMoney(seguroSocial)}</div></div>
+        <div class="row"><div>Seguro Educativo (1.25%) quincenal:</div><div class="negative">-${formatMoney(seguroEducativo)}</div></div>
+        <div class="row"><div>Total deducciones obreras:</div><div class="negative">-${formatMoney(deduccionesObreras)}</div></div>
+        <div class="row"><div>Neto quincenal antes de ISR:</div><div class="${netoQuincenalAntesISR>=0? "positive": "negative"}">${formatMoney(netoQuincenalAntesISR)}</div></div>
+        <div class="divider"></div>
+
+        <div class="row"><div>Gastos mensuales totales:</div><div>${formatMoney(gastosMensuales)}</div></div>
+        <div class="row"><div>Gastos quincenales (proporc.):</div><div>${formatMoney(gastosQuincenales)}</div></div>
+        <div class="row"><div>Saldo disponible mensual:</div><div class="${saldoDisponibleMensual>=0? "positive":"negative"}">${formatMoney(saldoDisponibleMensual)}</div></div>
+        <div class="row"><div>Saldo quincenal disponible:</div><div class="${saldoQuincenalDisponible>=0? "positive":"negative"}">${formatMoney(saldoQuincenalDisponible)}</div></div>
+      `;
+    }
+    fields.forEach(f => document.getElementById(f).addEventListener("input", calc));
+    calc();
+  </script>
+</body>
+</html>
